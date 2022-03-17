@@ -400,6 +400,17 @@ func (g *Generator) buildTypesFromAST(ctx context.Context, document *ast.Documen
 				return fields, nil
 			})
 
+			for _, field := range defType.Fields {
+				for _, directive := range field.Directives {
+					if directive.Name.Value == directive_index {
+						priorIndexes, _ := g.manager.indexes.indexesByCollectionName[defType.Name.Value]
+						g.manager.indexes.indexesByCollectionName[defType.Name.Value] = append(priorIndexes, index{
+							field: field.Name.Value,
+						})
+					}
+				}
+			}
+
 			objconf.Fields = fieldsThunk
 
 			obj := gql.NewObject(objconf)

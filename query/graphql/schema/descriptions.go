@@ -218,15 +218,22 @@ func (g *Generator) CreateDescriptions(types []*gql.Object) ([]client.Collection
 			return desc.Schema.Fields[i].Name < desc.Schema.Fields[j].Name
 		})
 
-		// add default index
-		desc.Indexes = []client.IndexDescription{
+		indexes := []client.IndexDescription{
+			// add default index
 			{
 				ID: uint32(0),
 			},
 		}
 
-		// @todo: Add additional indexes based on defined
-		// relations and directives
+		if providedIndexes, hasIndexes := g.manager.indexes.indexesByCollectionName[t.Name()]; hasIndexes {
+			for i, index := range providedIndexes {
+				indexes = append(indexes, client.IndexDescription{
+					ID:       uint32(i + 1),
+					FieldIDs: []uint32{desc.GetFieldKey(index.field)},
+				})
+			}
+		}
+		desc.Indexes = indexes
 
 		descs[i] = desc
 	}

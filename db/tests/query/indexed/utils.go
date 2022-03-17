@@ -8,13 +8,21 @@
 // by the Apache License, Version 2.0, included in the file
 // licenses/APL.txt.
 
-package schema
+package indexed
 
-const (
-	directive_relation = "relation"
-	directive_index    = "index"
+import (
+	"testing"
+
+	testUtils "github.com/sourcenetwork/defradb/db/tests"
 )
 
-const (
-	directive_relation_name = "name"
-)
+var userCollectionGQLSchema = (`
+	type users {
+		Name: String
+		Age: Int @index
+	}
+`)
+
+func executeTestCase(t *testing.T, test testUtils.QueryTestCase) {
+	testUtils.ExecuteQueryTestCase(t, userCollectionGQLSchema, []string{"users"}, test)
+}

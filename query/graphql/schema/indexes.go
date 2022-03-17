@@ -10,11 +10,10 @@
 
 package schema
 
-const (
-	directive_relation = "relation"
-	directive_index    = "index"
-)
+type index struct {
+	field string
+}
 
-const (
-	directive_relation_name = "name"
-)
+type indexManager struct {
+	indexesByCollectionName map[string][]index
+}

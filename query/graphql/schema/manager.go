@@ -22,12 +22,17 @@ type SchemaManager struct {
 	schema    gql.Schema
 	Generator *Generator
 	Relations *RelationManager
+	indexes   indexManager
 }
 
 // NewSchemaManager returns a new instance of a SchemaManager
 // with a new default type map
 func NewSchemaManager() (*SchemaManager, error) {
-	sm := &SchemaManager{}
+	sm := &SchemaManager{
+		indexes: indexManager{
+			indexesByCollectionName: map[string][]index{},
+		},
+	}
 	schema, err := gql.NewSchema(gql.SchemaConfig{
 		Types:    defaultTypes(),
 		Query:    defaultQueryType(),
