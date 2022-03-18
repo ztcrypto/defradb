@@ -85,7 +85,9 @@ func (db *db) newCollection(desc client.CollectionDescription) (*collection, err
 		if (field.Kind != client.FieldKind_DocKey && !field.IsObject()) && field.Typ == client.NONE_CRDT {
 			return nil, errors.New("Collection schema field missing CRDT type")
 		}
-		desc.Schema.Fields[i].ID = client.FieldID(i)
+		if desc.Schema.Fields[i].ID == client.FieldID(0) {
+			desc.Schema.Fields[i].ID = client.FieldID(i)
+		}
 	}
 
 	if len(desc.Indexes) == 0 {

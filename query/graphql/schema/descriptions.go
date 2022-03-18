@@ -115,11 +115,15 @@ func (g *Generator) CreateDescriptions(types []*gql.Object) ([]client.Collection
 		// add schema
 		desc.Schema.Fields = []client.FieldDescription{
 			{
+				ID:   client.FieldID(0),
 				Name: "_key",
 				Kind: client.FieldKind_DocKey,
 				Typ:  client.NONE_CRDT,
 			},
 		}
+
+		// start at 1, as _key is 0
+		currentFieldId := 1
 		// and schema fields
 		for fname, field := range t.Fields() {
 			if _, ok := parser.ReservedFields[fname]; ok {
@@ -142,9 +146,11 @@ func (g *Generator) CreateDescriptions(types []*gql.Object) ([]client.Collection
 			}
 
 			fd := client.FieldDescription{
+				ID:   client.FieldID(currentFieldId),
 				Name: fname,
 				Kind: gqlTypeToFieldKind(field.Type),
 			}
+			currentFieldId += 1
 			fd.Typ = defaultCRDTForFieldKind[fd.Kind]
 
 			if fd.IsObject() {
@@ -187,10 +193,12 @@ func (g *Generator) CreateDescriptions(types []*gql.Object) ([]client.Collection
 
 					// create field
 					fdRelated := client.FieldDescription{
+						ID:           client.FieldID(currentFieldId),
 						Name:         fmt.Sprintf("%s_id", fname),
 						Kind:         gqlTypeToFieldKind(gql.ID),
 						RelationType: client.Relation_Type_INTERNAL_ID,
 					}
+					currentFieldId += 1
 					fdRelated.Typ = defaultCRDTForFieldKind[fdRelated.Kind]
 					desc.Schema.Fields = append(desc.Schema.Fields, fdRelated)
 				}
