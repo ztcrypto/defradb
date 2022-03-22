@@ -46,7 +46,7 @@ type scanNode struct {
 
 func (n *scanNode) Init() error {
 	// init the fetcher
-	if err := n.fetcher.Init(&n.desc, n.index); err != nil {
+	if err := n.fetcher.Init(&n.desc); err != nil {
 		return err
 	}
 	return n.initScan()
@@ -127,7 +127,7 @@ func (p *Planner) Scan(versioned bool) *scanNode {
 	if versioned {
 		f = new(fetcher.VersionedFetcher)
 	} else {
-		f = new(fetcher.DocumentFetcher)
+		f = new(fetcher.PrimaryIndexFetcher)
 	}
 	return &scanNode{p: p, fetcher: f}
 }

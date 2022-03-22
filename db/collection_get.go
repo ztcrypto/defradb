@@ -46,11 +46,11 @@ func (c *collection) Get(ctx context.Context, key client.DocKey) (*client.Docume
 
 func (c *collection) get(ctx context.Context, txn datastore.Txn, key core.DataStoreKey) (*client.Document, error) {
 	// create a new document fetcher
-	df := new(fetcher.DocumentFetcher)
+	df := new(fetcher.PrimaryIndexFetcher)
 	desc := &c.desc
 	index := &c.desc.Indexes[0]
 	// initialize it with the primary index
-	err := df.Init(&c.desc, &c.desc.Indexes[0])
+	err := df.Init(&c.desc)
 	if err != nil {
 		_ = df.Close()
 		return nil, err

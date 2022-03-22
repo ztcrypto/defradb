@@ -33,7 +33,7 @@ var (
 	_ Fetcher = (*VersionedFetcher)(nil)
 )
 
-// HistoryFetcher is like the normal DocumentFetcher, except it is able to traverse
+// HistoryFetcher is like the normal PrimaryIndexFetcher, except it is able to traverse
 // to a specific version in the documents history graph, and return the fetched
 // state at that point exactly.
 //
@@ -45,7 +45,7 @@ var (
 // 	Target Version		 Current State
 //
 //
-// A regular DocumentFetcher fetches and returns the state at V4, but the
+// A regular PrimaryIndexFetcher fetches and returns the state at V4, but the
 // VersionsedFetcher would step backwards through the update graph, recompose
 // the state at the "Target Version" V1, and return the state at that point.
 //
@@ -58,7 +58,7 @@ var (
 // ds.Datastore, abstracted into a DSReaderWriter.
 //
 // The goal of the VersionedFetcher is to implement the same external API/Interface as
-// the DocumentFetcher, and to have it return the encoded/decoded document as
+// the PrimaryIndexFetcher, and to have it return the encoded/decoded document as
 // defined in the version, so that it can be used as a drop in replacement within
 // the scanNode query planner system.
 //
@@ -78,7 +78,7 @@ var (
 // within a new fetcher?
 type VersionedFetcher struct {
 	// embed the regular doc fetcher
-	*DocumentFetcher
+	*PrimaryIndexFetcher
 
 	txn datastore.Txn
 	ctx context.Context
@@ -101,14 +101,14 @@ type VersionedFetcher struct {
 
 // Start
 
-func (vf *VersionedFetcher) Init(col *client.CollectionDescription, index *client.IndexDescription) error {
+func (vf *VersionedFetcher) Init(col *client.CollectionDescription) error {
 	vf.col = col
 	vf.queuedCids = list.New()
 	vf.mCRDTs = make(map[uint32]crdt.MerkleCRDT)
 
 	// run the DF init, VersionedFetchers only supports the Primary (0) index
-	vf.DocumentFetcher = new(DocumentFetcher)
-	return vf.DocumentFetcher.Init(col, &col.Indexes[0])
+	vf.PrimaryIndexFetcher = new(PrimaryIndexFetcher)
+	return vf.PrimaryIndexFetcher.Init(col)
 
 }
 
@@ -157,7 +157,7 @@ func (vf *VersionedFetcher) Start(ctx context.Context, txn datastore.Txn, spans 
 		return fmt.Errorf("Failed seeking state to %v: %w", c, err)
 	}
 
-	return vf.DocumentFetcher.Start(ctx, vf.store, nil)
+	return vf.PrimaryIndexFetcher.Start(ctx, vf.store, nil)
 }
 
 func (vf *VersionedFetcher) Rootstore() ds.Datastore {
@@ -185,7 +185,7 @@ func (vf *VersionedFetcher) SeekTo(ctx context.Context, c cid.Cid) error {
 		return err
 	}
 
-	return vf.DocumentFetcher.Start(ctx, vf.store, nil)
+	return vf.PrimaryIndexFetcher.Start(ctx, vf.store, nil)
 }
 
 // seekTo seeks to the given CID version by steping through the CRDT
@@ -420,7 +420,7 @@ func (vf *VersionedFetcher) Close() error {
 		return err
 	}
 
-	return vf.DocumentFetcher.Close()
+	return vf.PrimaryIndexFetcher.Close()
 }
 
 func NewVersionedSpan(dockey core.DataStoreKey, version cid.Cid) core.Spans {

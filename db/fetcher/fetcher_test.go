@@ -55,10 +55,10 @@ func newTestCollectionDescription() client.CollectionDescription {
 
 }
 
-func newTestFetcher() (*fetcher.DocumentFetcher, error) {
-	df := new(fetcher.DocumentFetcher)
+func newTestFetcher() (*fetcher.PrimaryIndexFetcher, error) {
+	df := new(fetcher.PrimaryIndexFetcher)
 	desc := newTestCollectionDescription()
-	err := df.Init(&desc, &desc.Indexes[0])
+	err := df.Init(&desc)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func TestFetcherStartWithoutInit(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	df := new(fetcher.DocumentFetcher)
+	df := new(fetcher.PrimaryIndexFetcher)
 	err = df.Start(ctx, txn, core.Spans{})
 	assert.Error(t, err)
 }
@@ -136,9 +136,9 @@ func TestFetcherGetAllPrimaryIndexEncodedDocSingle(t *testing.T) {
 
 	// db.printDebugDB()
 
-	df := new(fetcher.DocumentFetcher)
+	df := new(fetcher.PrimaryIndexFetcher)
 	desc := col.Description()
-	err = df.Init(&desc, &desc.Indexes[0])
+	err = df.Init(&desc)
 	assert.NoError(t, err)
 
 	err = df.Start(ctx, txn, core.Spans{})
@@ -181,9 +181,9 @@ func TestFetcherGetAllPrimaryIndexEncodedDocMultiple(t *testing.T) {
 
 	// db.printDebugDB()
 
-	df := new(fetcher.DocumentFetcher)
+	df := new(fetcher.PrimaryIndexFetcher)
 	desc := col.Description()
-	err = df.Init(&desc, &desc.Indexes[0])
+	err = df.Init(&desc)
 	assert.NoError(t, err)
 
 	err = df.Start(ctx, txn, core.Spans{})
@@ -213,9 +213,9 @@ func TestFetcherGetAllPrimaryIndexDecodedSingle(t *testing.T) {
 	err = col.Save(ctx, doc)
 	assert.NoError(t, err)
 
-	df := new(fetcher.DocumentFetcher)
+	df := new(fetcher.PrimaryIndexFetcher)
 	desc := col.Description()
-	err = df.Init(&desc, &desc.Indexes[0])
+	err = df.Init(&desc)
 	assert.NoError(t, err)
 
 	txn, err := db.NewTxn(ctx, true)
@@ -265,9 +265,9 @@ func TestFetcherGetAllPrimaryIndexDecodedMultiple(t *testing.T) {
 	err = col.Save(ctx, doc)
 	assert.NoError(t, err)
 
-	df := new(fetcher.DocumentFetcher)
+	df := new(fetcher.PrimaryIndexFetcher)
 	desc := col.Description()
-	err = df.Init(&desc, &desc.Indexes[0])
+	err = df.Init(&desc)
 	assert.NoError(t, err)
 
 	txn, err := db.NewTxn(ctx, true)
@@ -322,9 +322,9 @@ func TestFetcherGetOnePrimaryIndexDecoded(t *testing.T) {
 	err = col.Save(ctx, doc)
 	assert.NoError(t, err)
 
-	df := new(fetcher.DocumentFetcher)
+	df := new(fetcher.PrimaryIndexFetcher)
 	desc := col.Description()
-	err = df.Init(&desc, &desc.Indexes[0])
+	err = df.Init(&desc)
 	assert.NoError(t, err)
 
 	// create a span for our document we wish to find
