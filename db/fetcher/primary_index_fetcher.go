@@ -48,33 +48,22 @@ type PrimaryIndexFetcher struct {
 }
 
 // Init implements PrimaryIndexFetcher
-func (df *PrimaryIndexFetcher) Init(col *client.CollectionDescription) error {
+func NewPrimaryIndexFetcher(col *client.CollectionDescription) (PrimaryIndexFetcher, error) {
 	if col.IsEmpty() {
-		return errors.New("PrimaryIndexFetcher must be given a schema")
+		return PrimaryIndexFetcher{}, errors.New("PrimaryIndexFetcher must be given a schema")
 	}
 
-	df.col = col
-	df.isReadingDocument = false
-	df.doc = new(encodedDocument)
-
-	if df.kvResultsIter != nil {
-		if err := df.kvResultsIter.Close(); err != nil {
-			return err
-		}
+	df := PrimaryIndexFetcher{
+		col: col,
+		doc: new(encodedDocument),
 	}
-	df.kvResultsIter = nil
-	if df.kvIter != nil {
-		if err := df.kvIter.Close(); err != nil {
-			return err
-		}
-	}
-	df.kvIter = nil
 
 	df.schemaFields = make(map[uint32]client.FieldDescription)
 	for _, field := range col.Schema.Fields {
 		df.schemaFields[uint32(field.ID)] = field
 	}
-	return nil
+
+	return df, nil
 }
 
 // Start implements PrimaryIndexFetcher

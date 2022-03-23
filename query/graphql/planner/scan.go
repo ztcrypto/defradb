@@ -45,6 +45,12 @@ type scanNode struct {
 }
 
 func (n *scanNode) Init() error {
+	if n.fetcher != nil {
+		err := n.fetcher.Close()
+		if err != nil {
+			return err
+		}
+	}
 	// init the fetcher
 	if err := n.fetcher.Init(&n.desc); err != nil {
 		return err

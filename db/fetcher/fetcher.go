@@ -13,7 +13,6 @@ package fetcher
 import (
 	"context"
 
-	"github.com/sourcenetwork/defradb/client"
 	"github.com/sourcenetwork/defradb/datastore"
 
 	"github.com/sourcenetwork/defradb/core"
@@ -24,7 +23,6 @@ import (
 // the key/value scanning, aggregation, and document
 // encoding.
 type Fetcher interface {
-	Init(col *client.CollectionDescription) error
 	Start(ctx context.Context, txn datastore.Txn, spans core.Spans) error
 	FetchNextMap(ctx context.Context) ([]byte, map[string]interface{}, error)
 	Close() error

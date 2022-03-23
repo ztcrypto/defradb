@@ -107,8 +107,12 @@ func (vf *VersionedFetcher) Init(col *client.CollectionDescription) error {
 	vf.mCRDTs = make(map[uint32]crdt.MerkleCRDT)
 
 	// run the DF init, VersionedFetchers only supports the Primary (0) index
-	vf.PrimaryIndexFetcher = new(PrimaryIndexFetcher)
-	return vf.PrimaryIndexFetcher.Init(col)
+	fetcher, err := NewPrimaryIndexFetcher(col)
+	if err != nil {
+		return err
+	}
+	vf.PrimaryIndexFetcher = &fetcher
+	return nil
 
 }
 
