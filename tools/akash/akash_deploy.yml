@@ -1,0 +1,52 @@
+version: "2.0"
+
+services:
+  defradb-develop:
+    image: "ghcr.io/djat/defradb.d453ae9e693cfc3da4b1170138bb058a022c58fe:develop"
+    command: 
+        - "/defradb"
+        - "start"
+        - "--url"
+        - "0.0.0.0:9181"
+#       - "--allowed_origins:provider.pcgameservers.com:31089"
+    expose:
+      - port: 9161
+        as: 9161
+        to:
+          - global: true
+      - port: 9171
+        as: 9171
+        to:
+          - global: true
+      - port: 9181
+        as: 80
+        to:
+          - global: true
+        accept:
+          - migen.ca
+      
+
+profiles:
+  compute:
+    defradb-develop:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 512Mi
+        storage:
+          size: 1Gi
+  placement:
+    akash: 
+      attributes:
+            
+      pricing:
+        defradb-develop:
+          denom: uakt
+          amount: 10000
+
+deployment:
+  defradb-develop:
+    akash:
+      profile: defradb-develop
+      count: 1
