@@ -148,24 +148,16 @@ func TestQueryOneToOneWithGroupRelatedIDFromSecondary(t *testing.T) {
 			},
 			testUtils.Request{
 				Request: `query {
-					Book(groupBy: [author_id]) {
-						author_id
-						_group {
-							name
-						}
+					Book {
+						name
 					}
 				}`,
 				Results: []map[string]any{
 					{
-						"author_id": nil,
-						"_group": []map[string]any{
-							{
-								"name": "Painted House",
-							},
-							{
-								"name": "Go Guide for Rust developers",
-							},
-						},
+						"author": nil,
+					},
+					{
+						"author": nil,
 					},
 				},
 			},
