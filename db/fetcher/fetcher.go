@@ -661,6 +661,7 @@ func (df *DocumentFetcher) Close() error {
 		if err != nil {
 			return err
 		}
+		df.kvIter = nil
 	}
 
 	if df.kvResultsIter != nil {
@@ -668,10 +669,15 @@ func (df *DocumentFetcher) Close() error {
 		if err != nil {
 			return err
 		}
+		df.kvResultsIter = nil
 	}
 
 	if df.deletedDocFetcher != nil {
-		return df.deletedDocFetcher.Close()
+		err := df.deletedDocFetcher.Close()
+		if err != nil {
+			return err
+		}
+		df.deletedDocFetcher = nil
 	}
 
 	return nil
