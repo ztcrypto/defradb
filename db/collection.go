@@ -871,25 +871,6 @@ func (c *collection) save(
 				return cid.Undef, client.NewErrFieldNotExist(k)
 			}
 
-			fieldDescription, valid := c.desc.Schema.GetField(k)
-			if !valid {
-				return cid.Undef, client.NewErrFieldNotExist(k)
-			}
-
-			relationFieldDescription, isSecondaryRelationID := c.isSecondaryIDField(fieldDescription)
-			if isSecondaryRelationID {
-				primaryId := val.Value().(string)
-
-				err = c.patchPrimaryDoc(ctx, txn, relationFieldDescription, primaryKey.DocKey, primaryId)
-				if err != nil {
-					return cid.Undef, err
-				}
-
-				// If this field was a secondary relation ID the related document will have been
-				// updated instead and we should discard this value
-				continue
-			}
-
 			node, _, err := c.saveDocValue(ctx, txn, fieldKey, val)
 			if err != nil {
 				return cid.Undef, err

@@ -14,7 +14,7 @@ import (
 	"context"
 	"testing"
 
-	badger "github.com/dgraph-io/badger/v3"
+	badger "github.com/dgraph-io/badger/v4"
 	dag "github.com/ipfs/boxo/ipld/merkledag"
 	"github.com/stretchr/testify/assert"
 

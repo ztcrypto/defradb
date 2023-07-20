@@ -20,7 +20,7 @@ import (
 	"path"
 	"testing"
 
-	badger "github.com/dgraph-io/badger/v3"
+	badger "github.com/dgraph-io/badger/v4"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 

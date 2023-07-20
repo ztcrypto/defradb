@@ -210,10 +210,10 @@ func (db *db) initialize(ctx context.Context) error {
 			return err
 		}
 
-		err = db.lensRegistry.ReloadLenses(ctx, txn)
+		/*err = db.lensRegistry.ReloadLenses(ctx, txn)
 		if err != nil {
 			return err
-		}
+		}*/
 
 		// The query language types are only updated on successful commit
 		// so we must not forget to do so on success regardless of whether

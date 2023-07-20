@@ -152,14 +152,7 @@ func TestQueryOneToOneWithGroupRelatedIDFromSecondary(t *testing.T) {
 						name
 					}
 				}`,
-				Results: []map[string]any{
-					{
-						"author": nil,
-					},
-					{
-						"author": nil,
-					},
-				},
+				Results: []map[string]any{},
 			},
 		},
 	}

@@ -20,7 +20,7 @@ import (
 	"strings"
 	"syscall"
 
-	badger "github.com/dgraph-io/badger/v3"
+	badger "github.com/dgraph-io/badger/v4"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	ma "github.com/multiformats/go-multiaddr"

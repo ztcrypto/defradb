@@ -17,7 +17,7 @@ import (
 	"context"
 	"sync"
 
-	badger "github.com/dgraph-io/badger/v3"
+	badger "github.com/dgraph-io/badger/v4"
 	ds "github.com/ipfs/go-datastore"
 	dsq "github.com/ipfs/go-datastore/query"
 	goprocess "github.com/jbenet/goprocess"
@@ -76,6 +76,7 @@ func (iterator *BadgerIterator) Close() error {
 	iterator.iteratorLock.Lock()
 	iterator.iterator.Close()
 	iterator.iteratorLock.Unlock()
+	return iterator.resultsBuilder.Process.Close()
 	return nil
 }
 
@@ -94,7 +95,9 @@ func (iterator *BadgerIterator) IteratePrefix(
 ) (dsq.Results, error) {
 	formattedStartPrefix := startPrefix.String()
 	formattedEndPrefix := endPrefix.String()
-
+	if iterator.resultsBuilder != nil {
+		iterator.resultsBuilder.Process.Close()
+	}
 	iterator.resultsBuilder = dsq.NewResultBuilder(iterator.query)
 
 	iterator.resultsBuilder.Process.Go(func(worker goprocess.Process) {
@@ -121,7 +124,7 @@ func (iterator *BadgerIterator) IteratePrefix(
 		iterator.yieldResults(formattedStartPrefix, formattedEndPrefix, worker)
 	})
 
-	go iterator.resultsBuilder.Process.CloseAfterChildren() //nolint:errcheck
+	go iterator.resultsBuilder.Process.Close() //nolint:errcheck
 
 	return iterator.resultsBuilder.Results(), nil
 }
