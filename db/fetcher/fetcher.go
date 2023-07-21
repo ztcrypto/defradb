@@ -514,58 +514,16 @@ func (df *DocumentFetcher) FetchNext(ctx context.Context) (EncodedDocument, erro
 			return nil, err
 		}
 
-		if df.filter != nil {
-			// only run filter if we've collected all the fields
-			// required for filtering. This is tracked by the bitsets.
-			if df.filterSet.Equal(df.doc.filterSet) {
-				filterDoc, err := df.doc.decodeToDocForFilter()
-				if err != nil {
-					return nil, err
-				}
-
-				df.ranFilter = true
-				df.passedFilter, err = mapper.RunFilter(filterDoc, df.filter)
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
-
 		// if we don't pass the filter (ran and pass)
 		// theres no point in collecting other select fields
 		// so we seek to the next doc
-		spansDone, docDone, err := df.nextKey(ctx, !df.passedFilter && df.ranFilter)
+		_, docDone, err := df.nextKey(ctx, !df.passedFilter && df.ranFilter)
 		if err != nil {
 			return nil, err
 		}
 
 		if docDone {
-			if df.filter != nil {
-				// if we passed, return
-				if df.passedFilter {
-					return df.doc, nil
-				} else if !df.ranFilter { // if we didn't run, run it
-					decodedDoc, err := df.doc.DecodeToDoc()
-					if err != nil {
-						return nil, err
-					}
-					df.passedFilter, err = mapper.RunFilter(decodedDoc, df.filter)
-					if err != nil {
-						return nil, err
-					}
-					if df.passedFilter {
-						return df.doc, nil
-					}
-				}
-			} else {
-				return df.doc, nil
-			}
-
-			if !spansDone {
-				continue
-			}
-
-			return nil, nil
+			return df.doc, nil
 		}
 
 		// // crossed document kv boundary?
