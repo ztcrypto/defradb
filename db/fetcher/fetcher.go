@@ -606,45 +606,14 @@ func (df *DocumentFetcher) FetchNextDoc(
 	var encdoc EncodedDocument
 	var status client.DocumentStatus
 
-	// If the deletedDocFetcher isn't nil, this means that the user requested to include the deleted documents
-	// in the query. To keep the active and deleted docs in lexicographic order of dockeys, we use the two distinct
-	// fetchers and fetch the one that has the next lowest (or highest if requested in reverse order) dockey value.
-	ddf := df.deletedDocFetcher
-	if ddf != nil {
-		// If we've reached the end of the deleted docs, we can skip to getting the next active docs.
-		if !ddf.kvEnd {
-			if df.reverse {
-				if df.kvEnd || ddf.kv.Key.DocKey > df.kv.Key.DocKey {
-					encdoc, err = ddf.FetchNext(ctx)
-					if err != nil {
-						return nil, core.Doc{}, err
-					}
-					status = client.Deleted
-				}
-			} else {
-				if df.kvEnd || ddf.kv.Key.DocKey < df.kv.Key.DocKey {
-					encdoc, err = ddf.FetchNext(ctx)
-					if err != nil {
-						return nil, core.Doc{}, err
-					}
-					status = client.Deleted
-				}
-			}
-		}
+	encdoc, err = df.FetchNext(ctx)
+	if err != nil {
+		return nil, core.Doc{}, err
 	}
-
-	// At this point id encdoc is nil, it means that the next document to be
-	// returned will be from the active ones.
 	if encdoc == nil {
-		encdoc, err = df.FetchNext(ctx)
-		if err != nil {
-			return nil, core.Doc{}, err
-		}
-		if encdoc == nil {
-			return nil, core.Doc{}, nil
-		}
-		status = client.Active
+		return nil, core.Doc{}, nil
 	}
+	status = client.Active
 
 	doc, err := encdoc.DecodeToDoc()
 	if err != nil {
