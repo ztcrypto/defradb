@@ -136,7 +136,7 @@ func (n *scanNode) tryAddField(fieldName string) bool {
 // Start starts the internal logic of the scanner
 // like the DocumentFetcher, and more.
 func (n *scanNode) Start() error {
-	return nil // no op
+	return n.fetcher.Start(n.p.ctx, n.spans)
 }
 
 func (n *scanNode) initScan() error {

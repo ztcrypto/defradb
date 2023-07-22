@@ -11,9 +11,8 @@
 package fetcher
 
 import (
-	"bytes"
 	"context"
-	"strings"
+	"fmt"
 
 	"github.com/bits-and-blooms/bitset"
 	dsq "github.com/ipfs/go-datastore/query"
@@ -59,9 +58,9 @@ var (
 
 // DocumentFetcher is a utility to incrementally fetch all the documents.
 type DocumentFetcher struct {
-	col     *client.CollectionDescription
-	reverse bool
-
+	col          *client.CollectionDescription
+	reverse      bool
+	i            int
 	txn          datastore.Txn
 	spans        core.Spans
 	order        []dsq.Order
@@ -307,21 +306,10 @@ func (df *DocumentFetcher) nextKey(ctx context.Context, seekNext bool) (spanDone
 		return false, false, ErrFailedToSeek
 	}
 
-	if seekNext {
-		curKey := df.kv.Key
-		curKey.FieldId = "" // clear field so prefixEnd applies to dockey
-		seekKey := curKey.PrefixEnd().ToString()
-		spanDone, df.kv, err = df.seekKV(seekKey)
-		// handle any internal errors
-		if err != nil {
-			return false, false, err
-		}
-	} else {
-		spanDone, df.kv, err = df.nextKV()
-		// handle any internal errors
-		if err != nil {
-			return false, false, err
-		}
+	spanDone, df.kv, err = df.nextKV()
+	// handle any internal errors
+	if err != nil {
+		return false, false, err
 	}
 
 	if df.kv != nil && (df.kv.Key.InstanceType != core.ValueKey && df.kv.Key.InstanceType != core.DeletedKey) {
@@ -332,12 +320,15 @@ func (df *DocumentFetcher) nextKey(ctx context.Context, seekNext bool) (spanDone
 
 	df.kvEnd = spanDone
 	if df.kvEnd {
-		moreSpans, err := df.startNextSpan(ctx)
-		if err != nil {
-			return false, false, err
+		if df.i > 7 {
+			println(df.i)
+			//df.kvResultsIter.Close()
+			//panic("gds")
+			//return false, false, ErrFailedToSeek
+			//println(df.i)
 		}
 		df.isReadingDocument = false
-		return !moreSpans, true, nil
+		return true, true, nil
 	}
 
 	// check if we've crossed document boundries
@@ -353,14 +344,23 @@ func (df *DocumentFetcher) nextKey(ctx context.Context, seekNext bool) (spanDone
 // - Returns true if the entire iterator/span is exhausted
 // - Returns a kv pair instead of internally updating
 func (df *DocumentFetcher) nextKV() (iterDone bool, kv *keyValue, err error) {
+	if df.i > 7 {
+
+		//return false, nil, ErrFailedToSeek
+	} else {
+	}
+	df.i += 1
 	done, dsKey, res, err := df.nextKVRaw()
 	if done || err != nil {
 		return done, nil, err
 	}
+	if df.i == 7 {
+		//panic(fmt.Sprint(dsKey))
+	}
 
 	kv = &keyValue{
 		Key:   dsKey,
-		Value: res.Value,
+		Value: res,
 	}
 	return false, kv, nil
 }
@@ -369,34 +369,8 @@ func (df *DocumentFetcher) nextKV() (iterDone bool, kv *keyValue, err error) {
 // the target key, or if the target key doesn't exist, the
 // next smallest key that is greater than the target.
 func (df *DocumentFetcher) seekKV(key string) (bool, *keyValue, error) {
-	// make sure the current kv is *before* the target key
-	switch strings.Compare(df.kv.Key.ToString(), key) {
-	case 0:
-		// equal, we should just return the kv state
-		return df.kvEnd, df.kv, nil
-	case 1:
-		// greater, error
-		return false, nil, NewErrFailedToSeek(key, nil)
-	}
-
 	for {
-		done, dsKey, res, err := df.nextKVRaw()
-		if done || err != nil {
-			return done, nil, err
-		}
-
-		switch strings.Compare(dsKey.ToString(), key) {
-		case -1:
-			// before, so lets seek again
-			continue
-		case 0, 1:
-			// equal or greater (first), return a formatted kv
-			kv := &keyValue{
-				Key:   dsKey,
-				Value: res.Value, // @todo make lazy
-			}
-			return false, kv, nil
-		}
+		return false, nil, ErrFailedToSeek
 	}
 }
 
@@ -404,22 +378,22 @@ func (df *DocumentFetcher) seekKV(key string) (bool, *keyValue, error) {
 // - It directly interacts with the KVIterator.
 // - Returns true if the entire iterator/span is exhausted
 // - Returns a kv pair instead of internally updating
-func (df *DocumentFetcher) nextKVRaw() (bool, core.DataStoreKey, dsq.Result, error) {
+func (df *DocumentFetcher) nextKVRaw() (bool, core.DataStoreKey, []byte, error) {
 	res, available := df.kvResultsIter.NextSync()
 	if !available {
-		return true, core.DataStoreKey{}, res, nil
+		return true, core.DataStoreKey{}, nil, ErrFailedToSeek
 	}
 	err := res.Error
 	if err != nil {
-		return true, core.DataStoreKey{}, res, err
+		return true, core.DataStoreKey{}, nil, err
 	}
 
 	dsKey, err := core.NewDataStoreKey(res.Key)
 	if err != nil {
-		return true, core.DataStoreKey{}, res, err
+		return true, core.DataStoreKey{}, nil, err
 	}
 
-	return false, dsKey, res, nil
+	return false, dsKey, res.Value, nil
 }
 
 // processKV continuously processes the key value pairs we've received
@@ -440,12 +414,6 @@ func (df *DocumentFetcher) processKV(kv *keyValue) error {
 		df.doc.Reset()
 
 		// re-init doc state
-		if df.filterSet != nil {
-			df.doc.filterSet = bitset.New(df.filterSet.Len())
-			if df.filterSet.Test(0) {
-				df.doc.filterSet.Set(0) // mark dockey as set
-			}
-		}
 		df.doc.key = []byte(kv.Key.DocKey)
 		df.passedFilter = false
 		df.ranFilter = false
@@ -456,34 +424,16 @@ func (df *DocumentFetcher) processKV(kv *keyValue) error {
 		return nil
 	}
 
-	// we have to skip the object marker
-	if bytes.Equal(df.kv.Value, []byte{base.ObjectMarker}) {
-		return nil
-	}
-
 	// extract the FieldID and update the encoded doc properties map
 	fieldID, err := kv.Key.FieldID()
 	if err != nil {
 		return err
 	}
-	fieldDesc, exists := df.selectFields[fieldID]
-	if !exists {
-		fieldDesc, exists = df.filterFields[fieldID]
-		if !exists {
-			return nil // if we can't find this field in our sets, just ignore it
-		}
-	}
-
-	ufid := uint(fieldID)
+	fieldDesc, _ := df.selectFields[fieldID]
 
 	property := &encProperty{
 		Desc: fieldDesc,
 		Raw:  kv.Value,
-	}
-
-	if df.filterSet != nil && df.filterSet.Test(ufid) {
-		df.doc.filterSet.Set(ufid)
-		property.IsFilter = true
 	}
 
 	df.doc.Properties[fieldDesc] = property
@@ -591,11 +541,13 @@ func (df *DocumentFetcher) Close() error {
 	}
 
 	if df.kvResultsIter != nil {
+		println("ci" + fmt.Sprint(df.i))
 		err := df.kvResultsIter.Close()
 		if err != nil {
 			return err
 		}
 	}
+	println("closing")
 
 	if df.deletedDocFetcher != nil {
 		return df.deletedDocFetcher.Close()

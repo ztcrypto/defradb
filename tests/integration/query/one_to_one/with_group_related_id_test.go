@@ -173,4 +173,5 @@ func TestQueryOneToOneWithGroupRelatedIDFromSecondary(t *testing.T) {
 	}
 
 	testUtils.ExecuteTestCase(t, []string{"Book", "Author"}, test)
+	panic("gfds")
 }
