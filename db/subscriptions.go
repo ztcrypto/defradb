@@ -57,6 +57,7 @@ func (db *db) handleSubscription(
 			log.Error(ctx, err.Error())
 			continue
 		}
+		defer txn.Discard(ctx)
 
 		p := planner.New(ctx, db.WithTxn(txn), txn)
 
