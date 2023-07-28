@@ -287,6 +287,7 @@ func ExecuteTestCase(
 	t *testing.T,
 	testCase TestCase,
 ) {
+	flattenActions(&testCase)
 	collectionNames := getCollectionNames(testCase)
 	changeDetector.PreTestChecks(t, collectionNames)
 	skipIfMutationTypeUnsupported(t, testCase.SupportedMutationTypes)
@@ -351,7 +352,6 @@ func executeTestCase(
 		logging.NewKV("changeDetector.Repository", changeDetector.Repository),
 	)
 
-	flattenActions(&testCase)
 	startActionIndex, endActionIndex := getActionRange(testCase)
 
 	s := newState(ctx, t, testCase, dbt, clientType, collectionNames)
