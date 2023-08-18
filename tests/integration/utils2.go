@@ -1601,7 +1601,6 @@ func executeSubscriptionRequest(
 							action.ExpectedError,
 							nil,
 							// anyof is not yet supported by subscription requests
-							nil,
 							0,
 							map[docFieldKey][]any{},
 						)
@@ -1695,7 +1694,14 @@ func assertRequestResults(
 
 	log.Info(s.ctx, "", logging.NewKV("RequestResults", result.Data))
 
-	require.Equal(s.t, len(expectedResults), len(resultantData), s.testCase.Description)
+	// compare results
+	require.Equal(s.t, len(expectedResults), len(resultantData),
+		s.testCase.Description+" \n(number of results don't match)")
+	if len(expectedResults) == 0 {
+		// Need `require` here otherwise will panic in the for loop that ranges over
+		// resultantData and tries to access expectedResults[0].
+		require.Equal(s.t, expectedResults, resultantData)
+	}
 
 	for docIndex, result := range resultantData {
 		expectedResult := expectedResults[docIndex]
